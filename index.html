@@ -1,710 +1,92 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portal de Solicitudes — Aromatex</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --navy:   #0F1F3D;
-  --navy2:  #1B3A6B;
-  --blue:   #2563EB;
-  --lblue:  #DBEAFE;
-  --green:  #059669;
-  --lgreen: #D1FAE5;
-  --red:    #DC2626;
-  --lred:   #FEE2E2;
-  --amber:  #D97706;
-  --lamber: #FEF3C7;
-  --purple: #7C3AED;
-  --lpurp:  #EDE9FE;
-  --white:  #FFFFFF;
-  --gray50: #F8FAFC;
-  --gray100:#F1F5F9;
-  --gray200:#E2E8F0;
-  --gray400:#94A3B8;
-  --gray600:#475569;
-  --text:   #0F172A;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--gray50);color:var(--text);min-height:100vh}
 
-/* ── NAV ── */
-.nav{background:var(--navy);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50}
-.nav-brand{display:flex;align-items:center;gap:10px}
-.nav-logo{width:30px;height:30px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center}
-.nav-logo svg{width:16px;height:16px;fill:white}
-.nav-title{font-size:14px;font-weight:600;color:white}
-.nav-sub{font-size:11px;color:#64748B;margin-top:1px}
-.nav-user{display:flex;align-items:center;gap:10px}
-.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:white}
-.nav-name{font-size:12px;color:#CBD5E1}
-.nav-badge{font-size:10px;background:rgba(37,99,235,.25);color:#93C5FD;border:0.5px solid rgba(147,197,253,.3);padding:3px 9px;border-radius:20px}
+// ═══════════════════════════════════════════════════════════
+// SCRIPT: Recibir solicitudes del Portal ERP — Aromatex
+// Pega este código en: Extensiones → Apps Script
+// Luego: Implementar → Nueva implementación → Web app
+// Ejecutar como: Yo (daliacornejo@grupoavantex.com)
+// Acceso: Cualquier usuario, incluso anónimo
+// ═══════════════════════════════════════════════════════════
 
-/* ── TAB BAR ── */
-.tab-bar{background:white;border-bottom:1px solid var(--gray200);padding:0 28px;display:flex;gap:0}
-.tab-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px 18px;border:none;background:transparent;color:var(--gray400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px;white-space:nowrap;transition:color .15s}
-.tab-btn.active{color:var(--navy2);border-bottom-color:var(--navy2)}
-.tab-btn:hover:not(.active){color:var(--gray600)}
-.tab-badge{font-size:10px;background:var(--lred);color:var(--red);padding:1px 6px;border-radius:10px;font-weight:600}
-.tab-badge.green{background:var(--lgreen);color:var(--green)}
-
-/* ── VIEWS ── */
-.view{display:none;max-width:860px;margin:0 auto;padding:24px 20px}
-.view.active{display:block}
-
-/* ── STEPS ── */
-.steps{display:flex;align-items:center;gap:0;margin-bottom:28px}
-.step{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--gray400)}
-.step.done{color:var(--green)}
-.step.active{color:var(--navy2)}
-.step-circle{width:24px;height:24px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;background:transparent}
-.step.done .step-circle{background:var(--green);border-color:var(--green);color:white}
-.step.active .step-circle{background:var(--navy2);border-color:var(--navy2);color:white}
-.step-sep{flex:1;height:1px;background:var(--gray200);margin:0 8px}
-
-/* ── CARDS ── */
-.card{background:white;border:0.5px solid var(--gray200);border-radius:14px;padding:20px 22px;margin-bottom:18px}
-.card-header{margin-bottom:18px;padding-bottom:14px;border-bottom:0.5px solid var(--gray100)}
-.card-title{font-size:15px;font-weight:600;color:var(--text)}
-.card-sub{font-size:12px;color:var(--gray400);margin-top:3px}
-
-/* ── FORM ── */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:4px}
-.field label{font-size:12px;font-weight:500;color:var(--gray600)}
-.req{color:var(--red);margin-left:2px}
-.field input,.field select,.field textarea{width:100%;font-size:13px;padding:9px 12px;border-radius:8px;border:0.5px solid var(--gray200);background:white;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;transition:border-color .15s,box-shadow .15s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.field textarea{resize:vertical;min-height:72px;line-height:1.5}
-.hint{font-size:11px;color:var(--gray400)}
-.err{font-size:11px;color:var(--red);display:none}
-.has-error input,.has-error select,.has-error textarea{border-color:var(--red)!important}
-.has-error .err{display:block}
-
-/* ── URGENCY CARDS ── */
-.urg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px}
-@media(max-width:500px){.urg-grid{grid-template-columns:1fr}}
-.urg-card{border:0.5px solid var(--gray200);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .15s;user-select:none}
-.urg-card:hover{border-color:var(--blue);background:var(--lblue)}
-.urg-card.sel-normal{border-color:var(--green);background:var(--lgreen)}
-.urg-card.sel-urgente{border-color:var(--amber);background:var(--lamber)}
-.urg-card.sel-critico{border-color:var(--red);background:var(--lred)}
-.urg-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:16px;font-weight:700}
-.urg-label{font-size:13px;font-weight:600;margin-bottom:3px}
-.urg-sub{font-size:11px;color:var(--gray400)}
-
-/* ── CALC BOX ── */
-.calc-box{background:var(--lblue);border:0.5px solid #BAD7F7;border-radius:8px;padding:12px 14px;margin-top:8px}
-.calc-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
-.calc-label{color:#0C447C}
-.calc-val{font-weight:600;color:#0F1F3D}
-.calc-total{font-size:15px;font-weight:600;border-top:0.5px solid #BAD7F7;padding-top:8px;margin-top:6px}
-
-/* ── REVIEW ── */
-.review-table{width:100%;border-collapse:collapse}
-.review-table tr{border-bottom:0.5px solid var(--gray100)}
-.review-table tr:last-child{border-bottom:none}
-.review-table td{padding:9px 4px;font-size:13px;vertical-align:top}
-.review-table td:first-child{color:var(--gray400);width:38%;padding-right:12px}
-.review-table td:last-child{font-weight:500;color:var(--text)}
-
-/* ── NOTICE ── */
-.notice{background:var(--lamber);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:12px 14px;font-size:12px;color:#92400E;margin-bottom:16px;line-height:1.6}
-
-/* ── SUCCESS ── */
-.success{text-align:center;padding:36px 20px}
-.success-check{width:58px;height:58px;border-radius:50%;background:var(--lgreen);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
-.folio-box{background:var(--gray50);border:0.5px solid var(--gray200);border-radius:8px;padding:12px 24px;display:inline-block;font-family:'DM Mono',monospace;font-size:17px;font-weight:500;color:var(--navy2);letter-spacing:.03em;margin:14px 0}
-.success-meta{max-width:420px;margin:0 auto 24px;background:var(--gray50);border-radius:10px;padding:14px 16px;text-align:left}
-.smeta-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--gray100)}
-.smeta-row:last-child{border-bottom:none}
-.smeta-label{color:var(--gray400)}
-.smeta-val{font-weight:500}
-
-/* ── BTNS ── */
-.btn-row{display:flex;justify-content:space-between;align-items:center;padding-top:6px}
-.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 22px;border-radius:8px;border:0.5px solid var(--gray200);background:white;color:var(--gray600);cursor:pointer;transition:all .15s}
-.btn:hover{background:var(--gray50)}
-.btn-primary{background:var(--navy2);color:white;border-color:var(--navy2)}
-.btn-primary:hover{background:var(--navy)}
-
-/* ── BADGE ── */
-.badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
-.b-ord{background:var(--lblue);color:#1E40AF}
-.b-ocas{background:var(--lamber);color:#92400E}
-.b-ext{background:var(--lpurp);color:#5B21B6}
-.b-pend{background:var(--lamber);color:#92400E}
-.b-proc{background:var(--lblue);color:#1E40AF}
-.b-comp{background:var(--lgreen);color:#065F46}
-.b-rech{background:var(--lred);color:#991B1B}
-
-/* ── TRACKER TABLE ── */
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{text-align:left;padding:8px 10px;color:var(--gray400);font-weight:500;border-bottom:1px solid var(--gray200);font-size:11px;background:var(--gray50)}
-.tbl td{padding:9px 10px;border-bottom:0.5px solid var(--gray100);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:var(--gray50)}
-
-/* ── EMPTY STATE ── */
-.empty{text-align:center;padding:48px 20px;color:var(--gray400)}
-.empty-icon{font-size:36px;margin-bottom:12px}
-.empty-text{font-size:14px;font-weight:500;margin-bottom:6px;color:var(--gray600)}
-.empty-sub{font-size:12px}
-
-/* ── STATS MINI ── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.stat-card{background:white;border:0.5px solid var(--gray200);border-radius:10px;padding:14px 16px}
-.stat-label{font-size:11px;color:var(--gray400);margin-bottom:4px}
-.stat-val{font-size:22px;font-weight:600;color:var(--text);line-height:1}
-.stat-sub{font-size:11px;margin-top:4px}
-
-/* ── STATUS STEPPER ── */
-.status-track{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--gray50);border-radius:8px;margin-bottom:8px}
-.st-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.st-line{flex:1;height:1px;background:var(--gray200)}
-</style>
-</head>
-<body>
-
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-brand">
-    <div class="nav-logo"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
-    <div><div class="nav-title">Portal de Solicitudes — Aromatex</div><div class="nav-sub">Área de Abastecimientos</div></div>
-  </div>
-  <div class="nav-user">
-    <div class="nav-avatar" id="navAvatar">?</div>
-    <span class="nav-name" id="navName">Mi cuenta</span>
-    <span class="nav-badge" id="navBadge">Nueva solicitud</span>
-  </div>
-</nav>
-
-<!-- TAB BAR -->
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchView('nueva',this)">📝 Nueva solicitud</button>
-  <button class="tab-btn" onclick="switchView('mis',this)">📋 Mis solicitudes <span class="tab-badge" id="countBadge">0</span></button>
-  <button class="tab-btn" onclick="switchView('admin',this)">⚙️ Administración <span class="tab-badge green" id="pendBadge">0</span></button>
-</div>
-
-<!-- ════════ VIEW: NUEVA SOLICITUD ════════ -->
-<div id="view-nueva" class="view active">
-
-  <!-- Steps -->
-  <div class="steps" id="stepsBar">
-    <div class="step active" id="step-1"><div class="step-circle">1</div>Solicitante</div>
-    <div class="step-sep"></div>
-    <div class="step" id="step-2"><div class="step-circle">2</div>Artículo</div>
-    <div class="step-sep"></div>
-    <div class="step" id="step-3"><div class="step-circle">3</div>Urgencia</div>
-    <div class="step-sep"></div>
-    <div class="step" id="step-4"><div class="step-circle">4</div>Revisión</div>
-  </div>
-
-  <!-- PASO 1 -->
-  <div id="paso-1">
-    <div class="card">
-      <div class="card-header"><div class="card-title">Datos del solicitante</div><div class="card-sub">¿Quién realiza esta solicitud?</div></div>
-      <div class="grid2" style="margin-bottom:16px">
-        <div class="field" id="f-nombre">
-          <label>Nombre completo <span class="req">*</span></label>
-          <input type="text" id="i-nombre" placeholder="Ej: María García López" oninput="syncNav()">
-          <span class="err">Este campo es obligatorio</span>
-        </div>
-        <div class="field" id="f-depto">
-          <label>Departamento / Área <span class="req">*</span></label>
-          <select id="i-depto">
-            <option value="">Selecciona tu área...</option>
-            <option>Abastecimientos</option><option>Administracion</option><option>Almacen</option>
-            <option>Atencion al cliente</option><option>Cobranza</option><option>Comercial</option>
-            <option>Contabilidad</option><option>Cuenta Clave</option><option>Direccion</option>
-            <option>Ecommerce</option><option>Flotilla</option><option>Fumigacion</option>
-            <option>Intendencia</option><option>Mercadotecnia</option><option>Operaciones</option>
-            <option>Recepcion</option><option>RH</option><option>Showroom Aromatex</option>
-            <option>Taller</option><option>Weldu</option><option>Otro</option>
-          </select>
-          <span class="err">Selecciona un departamento</span>
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field" id="f-aprobador">
-          <label>Nombre de quien autoriza <span class="req">*</span></label>
-          <input type="text" id="i-aprobador" placeholder="Ej: Alan Aziz / Fernanda López">
-          <span class="err">Indica quién aprueba tu solicitud</span>
-        </div>
-        <div class="field" id="f-tipo">
-          <label>Tipo de solicitud <span class="req">*</span></label>
-          <select id="i-tipo">
-            <option value="">Selecciona...</option>
-            <option value="ORDINARIA">Ordinaria — compra programada</option>
-            <option value="OCASIONAL">Ocasional — compra específica</option>
-            <option value="EXTRAOFICIAL">Extraoficial — urgente / fuera de proceso</option>
-          </select>
-          <span class="err">Selecciona el tipo de solicitud</span>
-        </div>
-      </div>
-    </div>
-    <div class="btn-row"><span style="font-size:12px;color:var(--gray400)">Paso 1 de 4</span><button class="btn btn-primary" onclick="goTo(2)">Continuar →</button></div>
-  </div>
-
-  <!-- PASO 2 -->
-  <div id="paso-2" style="display:none">
-    <div class="card">
-      <div class="card-header"><div class="card-title">Artículo o servicio</div><div class="card-sub">¿Qué necesitas comprar?</div></div>
-      <div class="field" id="f-desc" style="margin-bottom:16px">
-        <label>Descripción detallada <span class="req">*</span></label>
-        <textarea id="i-desc" placeholder="Sé específico: marca, modelo, medidas, color, presentación...&#10;Ej: Laptop Lenovo IdeaPad 15&quot; i5, 16GB RAM, color gris, para nuevo ingreso RH"></textarea>
-        <span class="err">Describe qué necesitas comprar</span>
-      </div>
-      <div class="grid3" style="margin-bottom:4px">
-        <div class="field" id="f-cant">
-          <label>Cantidad <span class="req">*</span></label>
-          <input type="number" id="i-cant" min="1" placeholder="Ej: 3" oninput="calcSub()">
-          <span class="err">Ingresa la cantidad</span>
-        </div>
-        <div class="field">
-          <label>Costo unitario estimado ($)</label>
-          <input type="number" id="i-costo" min="0" step="0.01" placeholder="Ej: 1500.00" oninput="calcSub()">
-          <span class="hint">Opcional — si ya tienes cotización</span>
-        </div>
-        <div class="field">
-          <label>Proveedor sugerido</label>
-          <input type="text" id="i-prov" placeholder="Ej: Amazon, Home Depot...">
-          <span class="hint">Opcional</span>
-        </div>
-      </div>
-      <div id="calcBox" style="display:none">
-        <div class="calc-box">
-          <div class="calc-row"><span class="calc-label">Subtotal (sin IVA)</span><span class="calc-val" id="calcSub_val">$0</span></div>
-          <div class="calc-row calc-total"><span class="calc-label">Total estimado (con IVA 16%)</span><span class="calc-val" id="calcTotal_val">$0</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Fechas y justificación</div></div>
-      <div class="grid2">
-        <div class="field" id="f-fecha">
-          <label>Fecha ideal de llegada <span class="req">*</span></label>
-          <input type="date" id="i-fecha">
-          <span class="err">Selecciona la fecha que necesitas</span>
-        </div>
-        <div class="field" id="f-justif">
-          <label>¿Para qué se usará? <span class="req">*</span></label>
-          <input type="text" id="i-justif" placeholder="Ej: Equipo nuevos ingresos agosto RH">
-          <span class="err">Explica el uso del artículo</span>
-        </div>
-      </div>
-    </div>
-    <div class="btn-row"><button class="btn" onclick="goTo(1)">← Atrás</button><button class="btn btn-primary" onclick="goTo(3)">Continuar →</button></div>
-  </div>
-
-  <!-- PASO 3 -->
-  <div id="paso-3" style="display:none">
-    <div class="card">
-      <div class="card-header"><div class="card-title">Nivel de urgencia</div><div class="card-sub">¿Qué tan pronto necesitas este artículo?</div></div>
-      <div class="urg-grid">
-        <div class="urg-card sel-normal" id="u-normal" onclick="selUrg('Normal')">
-          <div class="urg-icon" style="background:var(--lgreen);color:var(--green)">N</div>
-          <div class="urg-label" style="color:var(--green)">Normal</div>
-          <div class="urg-sub">3 a 5 días hábiles</div>
-        </div>
-        <div class="urg-card" id="u-urgente" onclick="selUrg('Urgente')">
-          <div class="urg-icon" style="background:var(--lamber);color:var(--amber)">U</div>
-          <div class="urg-label" style="color:var(--amber)">Urgente</div>
-          <div class="urg-sub">Menos de 3 días</div>
-        </div>
-        <div class="urg-card" id="u-critico" onclick="selUrg('Crítico')">
-          <div class="urg-icon" style="background:var(--lred);color:var(--red)">C</div>
-          <div class="urg-label" style="color:var(--red)">Crítico</div>
-          <div class="urg-sub">Hoy o mañana</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Método de pago y notas</div><div class="card-sub">Opcional</div></div>
-      <div class="grid2">
-        <div class="field">
-          <label>Método de pago preferido</label>
-          <select id="i-pago">
-            <option value="">Sin preferencia</option>
-            <option>AMEX DORADA 4007</option><option>AMEX VERDE 3004</option>
-            <option>Transferencia bancaria</option><option>Efectivo / Caja chica</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Notas adicionales</label>
-          <input type="text" id="i-notas" placeholder="Cualquier info extra...">
-        </div>
-      </div>
-    </div>
-    <div class="btn-row"><button class="btn" onclick="goTo(2)">← Atrás</button><button class="btn btn-primary" onclick="goTo(4)">Revisar solicitud →</button></div>
-  </div>
-
-  <!-- PASO 4 REVISIÓN -->
-  <div id="paso-4" style="display:none">
-    <div class="card">
-      <div class="card-header"><div class="card-title">Revisa tu solicitud</div><div class="card-sub">Confirma que todo esté correcto antes de enviar</div></div>
-      <table class="review-table" id="reviewTable"></table>
-    </div>
-    <div class="notice">Al confirmar, Abastecimientos recibirá tu solicitud. Recibirás un folio de seguimiento. El envío no implica aprobación automática de la compra.</div>
-    <div class="btn-row"><button class="btn" onclick="goTo(3)">← Editar</button><button class="btn btn-primary" onclick="enviar()">✓ Confirmar y enviar</button></div>
-  </div>
-
-  <!-- ÉXITO -->
-  <div id="paso-ok" style="display:none">
-    <div class="card">
-      <div class="success">
-        <div class="success-check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px">¡Solicitud enviada!</div>
-        <div style="font-size:13px;color:var(--gray400);margin-bottom:4px">Tu folio de seguimiento:</div>
-        <div class="folio-box" id="folioDisplay">SOL-0000000-0000</div>
-        <div style="font-size:12px;color:var(--gray400);margin-bottom:20px">Guarda este folio para dar seguimiento con Abastecimientos.</div>
-        <div class="success-meta" id="successMeta"></div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-          <button class="btn btn-primary" onclick="reset()">Nueva solicitud</button>
-          <button class="btn" onclick="switchView('mis', document.querySelectorAll('.tab-btn')[1])">Ver mis solicitudes</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ════════ VIEW: MIS SOLICITUDES ════════ -->
-<div id="view-mis" class="view">
-  <div class="stats-row" id="myStats"></div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--text)">Mis solicitudes</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="filtroEstatus" onchange="renderMisSolicitudes()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:0.5px solid var(--gray200);background:white;color:var(--text);font-family:'DM Sans',sans-serif">
-          <option value="">Todos los estatus</option>
-          <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Rechazada</option>
-        </select>
-        <button onclick="exportCSV()" style="font-size:12px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--gray200);background:white;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">↓ Exportar CSV</button>
-      </div>
-    </div>
-    <div id="misSolicitudesContainer"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aún no hay solicitudes</div><div class="empty-sub">Crea tu primera solicitud en la pestaña "Nueva solicitud"</div></div></div>
-  </div>
-</div>
-
-<!-- ════════ VIEW: ADMINISTRACIÓN ════════ -->
-<div id="view-admin" class="view">
-  <div class="stats-row" id="adminStats"></div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--text)">Panel de administración — Abastecimientos</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="filtroDepto" onchange="renderAdmin()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:0.5px solid var(--gray200);background:white;color:var(--text);font-family:'DM Sans',sans-serif">
-          <option value="">Todos los deptos.</option>
-        </select>
-        <select id="filtroAdminEst" onchange="renderAdmin()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:0.5px solid var(--gray200);background:white;color:var(--text);font-family:'DM Sans',sans-serif">
-          <option value="">Todos los estatus</option>
-          <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Rechazada</option>
-        </select>
-        <button onclick="exportCSV()" style="font-size:12px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--gray200);background:white;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">↓ Exportar CSV</button>
-      </div>
-    </div>
-    <div id="adminContainer"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin solicitudes aún</div><div class="empty-sub">Las solicitudes enviadas aparecerán aquí para gestionar</div></div></div>
-  </div>
-</div>
-
-<script>
-// ═══════════════════════════════════════════
-// ESTADO GLOBAL — Base de datos en memoria
-// ═══════════════════════════════════════════
-let solicitudes = JSON.parse(localStorage.getItem('aromatex_solicitudes')||'[]');
-let urgencia = 'Normal';
-let currentPaso = 1;
-
-function save(){ localStorage.setItem('aromatex_solicitudes', JSON.stringify(solicitudes)); }
-
-// ── NAVEGACIÓN ──────────────────────────────
-function switchView(name, btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('view-'+name).classList.add('active');
-  if(name==='mis')   renderMisSolicitudes();
-  if(name==='admin') renderAdmin();
-}
-
-function syncNav(){
-  const n = document.getElementById('i-nombre').value.trim();
-  if(!n) return;
-  const p = n.split(' ');
-  const ini = ((p[0]||'')[0]+(p[1]||'')[0]).toUpperCase();
-  document.getElementById('navAvatar').textContent = ini||'?';
-  document.getElementById('navName').textContent = p[0];
-}
-
-// ── FORMULARIO ──────────────────────────────
-function calcSub(){
-  const c = parseFloat(document.getElementById('i-cant').value)||0;
-  const u = parseFloat(document.getElementById('i-costo').value)||0;
-  const box = document.getElementById('calcBox');
-  if(c>0&&u>0){
-    const sub=c*u;
-    document.getElementById('calcSub_val').textContent='$'+sub.toLocaleString('es-MX',{minimumFractionDigits:2});
-    document.getElementById('calcTotal_val').textContent='$'+(sub*1.16).toLocaleString('es-MX',{minimumFractionDigits:2});
-    box.style.display='block';
-  } else { box.style.display='none'; }
-}
-
-function selUrg(v){
-  urgencia=v;
-  const map={Normal:'sel-normal',Urgente:'sel-urgente',Crítico:'sel-critico'};
-  const ids={Normal:'u-normal',Urgente:'u-urgente','Crítico':'u-critico'};
-  ['u-normal','u-urgente','u-critico'].forEach(id=>document.getElementById(id).className='urg-card');
-  document.getElementById(ids[v]).classList.add(map[v]);
-}
-
-function req(fieldId, inputId){
-  const v = document.getElementById(inputId).value.trim();
-  const f = document.getElementById(fieldId);
-  if(!v){ f.classList.add('has-error'); return false; }
-  f.classList.remove('has-error'); return true;
-}
-
-function validateStep(n){
-  let ok=true;
-  if(n===1){ ok=req('f-nombre','i-nombre')&&ok; ok=req('f-depto','i-depto')&&ok; ok=req('f-aprobador','i-aprobador')&&ok; ok=req('f-tipo','i-tipo')&&ok; }
-  if(n===2){ ok=req('f-desc','i-desc')&&ok; ok=req('f-cant','i-cant')&&ok; ok=req('f-fecha','i-fecha')&&ok; ok=req('f-justif','i-justif')&&ok; }
-  return ok;
-}
-
-function goTo(n){
-  if(n>currentPaso && !validateStep(currentPaso)) return;
-  document.getElementById('paso-'+currentPaso).style.display='none';
-  currentPaso=n;
-  document.getElementById('paso-'+n).style.display='block';
-  updateSteps(n);
-  if(n===4) buildReview();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function updateSteps(active){
-  for(let i=1;i<=4;i++){
-    const s=document.getElementById('step-'+i);
-    s.className='step';
-    const c=s.querySelector('.step-circle');
-    if(i<active){ s.classList.add('done'); c.innerHTML='✓'; }
-    else if(i===active){ s.classList.add('active'); c.textContent=i; }
-    else { c.textContent=i; }
+function doPost(e) {
+  try {
+    // Parsear datos recibidos del portal
+    var datos = JSON.parse(e.postData.contents);
+    
+    // Abrir la hoja
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var hoja = ss.getSheetByName('SOLICITUDES') || ss.getActiveSheet();
+    
+    // Si es la primera fila, agregar encabezados
+    if (hoja.getLastRow() === 0) {
+      hoja.appendRow([
+        'FOLIO', 'FECHA', 'MES DE COMPRA', 'NOMBRE SOLICITANTE',
+        'DEPARTAMENTO', 'QUIEN AUTORIZA', 'TIPO DE SOLICITUD',
+        'DESCRIPCION', 'CANTIDAD', 'COSTO UNITARIO', 'GRAN TOTAL',
+        'PROVEEDOR SUGERIDO', 'FECHA IDEAL', 'URGENCIA',
+        'METODO DE PAGO', 'NOTAS', 'ESTATUS'
+      ]);
+      // Formato encabezados
+      hoja.getRange(1, 1, 1, 17)
+        .setBackground('#1B3A6B')
+        .setFontColor('#FFFFFF')
+        .setFontWeight('bold');
+    }
+    
+    // Agregar la nueva solicitud
+    var ahora = new Date();
+    var mes = ahora.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
+    
+    hoja.appendRow([
+      datos.folio || '',
+      ahora.toLocaleString('es-MX'),
+      mes,
+      datos.nombre || '',
+      datos.depto || '',
+      datos.aprobador || '',
+      datos.tipo || '',
+      datos.desc || '',
+      datos.cantidad || 0,
+      datos.costo || 0,
+      datos.total || 0,
+      datos.prov || '',
+      datos.fechaIdeal || '',
+      datos.urgencia || 'Normal',
+      datos.pago || '',
+      datos.notas || '',
+      'Pendiente'
+    ]);
+    
+    // Formato monetario en columnas de costo
+    var ultimaFila = hoja.getLastRow();
+    hoja.getRange(ultimaFila, 10, 1, 3).setNumberFormat('"$"#,##0.00');
+    
+    // Enviar email de notificación a Dalia
+    try {
+      MailApp.sendEmail({
+        to: 'daliacornejo@grupoavantex.com',
+        subject: '🛒 Nueva solicitud: ' + datos.folio + ' | ' + datos.depto,
+        body: 'Nueva solicitud recibida en el Portal de Compras Aromatex.\n\n' +
+              'FOLIO: ' + datos.folio + '\n' +
+              'Solicitante: ' + datos.nombre + '\n' +
+              'Departamento: ' + datos.depto + '\n' +
+              'Artículo: ' + datos.desc + '\n' +
+              'Total estimado: $' + (datos.total || 0).toLocaleString('es-MX') + '\n' +
+              'Urgencia: ' + datos.urgencia + '\n' +
+              'Fecha ideal: ' + datos.fechaIdeal + '\n\n' +
+              'Revisa el detalle en tu Google Sheet.'
+      });
+    } catch(emailErr) {
+      // Si falla el email, continúa igual
+    }
+    
+    // Respuesta exitosa
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok', folio: datos.folio }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
-
-function g(id){ return document.getElementById(id).value.trim(); }
-
-function tipoBadge(t){
-  const m={ORDINARIA:'b-ord',OCASIONAL:'b-ocas',EXTRAOFICIAL:'b-ext'};
-  return `<span class="badge ${m[t]||'b-ord'}">${t}</span>`;
-}
-
-function buildReview(){
-  const c=parseFloat(document.getElementById('i-cant').value)||0;
-  const u=parseFloat(document.getElementById('i-costo').value)||0;
-  const total=c*u*1.16;
-  const rows=[
-    ['Solicitante', g('i-nombre')],
-    ['Departamento', g('i-depto')],
-    ['Autoriza', g('i-aprobador')],
-    ['Tipo de solicitud', tipoBadge(g('i-tipo'))],
-    ['Artículo / Servicio', g('i-desc')],
-    ['Cantidad', c||'—'],
-    ['Costo unitario', u>0?'$'+u.toLocaleString('es-MX',{minimumFractionDigits:2}):'No especificado'],
-    ['Total estimado c/IVA', total>0?'$'+Math.round(total).toLocaleString('es-MX'):'Por cotizar'],
-    ['Proveedor sugerido', g('i-prov')||'Sin preferencia'],
-    ['Fecha ideal', g('i-fecha')||'—'],
-    ['Justificación', g('i-justif')],
-    ['Urgencia', urgencia],
-    ['Método de pago', g('i-pago')||'Sin preferencia'],
-    ['Notas', g('i-notas')||'—'],
-  ];
-  document.getElementById('reviewTable').innerHTML=rows.map(([l,v])=>
-    `<tr><td>${l}</td><td>${v}</td></tr>`).join('');
-}
-
-function enviar(){
-  const ahora=new Date();
-  const fecha=ahora.toISOString().slice(0,10).replace(/-/g,'');
-  const folio='SOL-'+fecha+'-'+String(Math.floor(Math.random()*9000)+1000);
-  const c=parseFloat(document.getElementById('i-cant').value)||0;
-  const u=parseFloat(document.getElementById('i-costo').value)||0;
-  const total=c*u*1.16;
-
-  const sol={
-    folio, fecha: ahora.toISOString(),
-    mes: new Date().toLocaleDateString('es-MX',{month:'long',year:'numeric'}).toUpperCase(),
-    nombre:g('i-nombre'), depto:g('i-depto'), aprobador:g('i-aprobador'),
-    tipo:g('i-tipo'), desc:g('i-desc'), cantidad:c, costo:u, total,
-    prov:g('i-prov'), fechaIdeal:g('i-fecha'), justif:g('i-justif'),
-    urgencia, pago:g('i-pago'), notas:g('i-notas'),
-    estatus:'Pendiente', fechaCreacion: ahora.toLocaleString('es-MX')
-  };
-
-  solicitudes.unshift(sol);
-  save();
-
-  document.getElementById('folioDisplay').textContent=folio;
-  const meta=[
-    ['Solicitante',sol.nombre],['Departamento',sol.depto],
-    ['Artículo',sol.desc.slice(0,50)+(sol.desc.length>50?'…':'')],
-    ['Cantidad',sol.cantidad],
-    ['Total estimado',sol.total>0?'$'+Math.round(sol.total).toLocaleString('es-MX'):'Por cotizar'],
-    ['Urgencia',sol.urgencia],['Fecha ideal',sol.fechaIdeal||'—'],
-  ];
-  document.getElementById('successMeta').innerHTML=meta.map(([l,v])=>
-    `<div class="smeta-row"><span class="smeta-label">${l}</span><span class="smeta-val">${v}</span></div>`).join('');
-
-  document.getElementById('paso-4').style.display='none';
-  document.getElementById('paso-ok').style.display='block';
-  document.querySelectorAll('.step').forEach(s=>{s.className='step done';s.querySelector('.step-circle').innerHTML='✓';});
-  updateBadges();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function reset(){
-  ['i-nombre','i-depto','i-aprobador','i-tipo','i-desc','i-cant','i-costo','i-prov','i-fecha','i-justif','i-pago','i-notas']
-    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('calcBox').style.display='none';
-  urgencia='Normal';
-  selUrg('Normal');
-  document.getElementById('navAvatar').textContent='?';
-  document.getElementById('navName').textContent='Mi cuenta';
-  ['paso-2','paso-3','paso-4','paso-ok'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('paso-1').style.display='block';
-  currentPaso=1; updateSteps(1);
-}
-
-// ── MIS SOLICITUDES ──────────────────────────
-function estatusBadge(e){
-  const m={Pendiente:'b-pend','En proceso':'b-proc',Completada:'b-comp',Rechazada:'b-rech'};
-  return `<span class="badge ${m[e]||'b-pend'}">${e}</span>`;
-}
-
-function renderMisSolicitudes(){
-  const filtro=document.getElementById('filtroEstatus').value;
-  const data=filtro?solicitudes.filter(s=>s.estatus===filtro):solicitudes;
-
-  // Stats
-  const total=solicitudes.length;
-  const pend=solicitudes.filter(s=>s.estatus==='Pendiente').length;
-  const proc=solicitudes.filter(s=>s.estatus==='En proceso').length;
-  const comp=solicitudes.filter(s=>s.estatus==='Completada').length;
-  const monto=solicitudes.reduce((a,s)=>a+(s.total||0),0);
-  document.getElementById('myStats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total enviadas</div><div class="stat-val">${total}</div><div class="stat-sub" style="color:var(--blue)">Todas mis solicitudes</div></div>
-    <div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-val" style="color:var(--amber)">${pend}</div><div class="stat-sub" style="color:var(--amber)">En espera de revisión</div></div>
-    <div class="stat-card"><div class="stat-label">En proceso</div><div class="stat-val" style="color:var(--blue)">${proc}</div><div class="stat-sub" style="color:var(--blue)">Siendo gestionadas</div></div>
-    <div class="stat-card"><div class="stat-label">Monto total</div><div class="stat-val" style="font-size:16px">${monto>0?'$'+Math.round(monto).toLocaleString('es-MX'):'$0'}</div><div class="stat-sub" style="color:var(--green)">${comp} completadas</div></div>`;
-
-  if(!data.length){
-    document.getElementById('misSolicitudesContainer').innerHTML=
-      `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No hay solicitudes</div><div class="empty-sub">${filtro?'Sin resultados para este filtro':'Crea tu primera solicitud'}</div></div>`;
-    return;
-  }
-  document.getElementById('misSolicitudesContainer').innerHTML=`
-    <div style="overflow-x:auto">
-    <table class="tbl"><thead><tr><th>Folio</th><th>Fecha</th><th>Departamento</th><th>Descripción</th><th>Monto</th><th>Urgencia</th><th>Estatus</th></tr></thead><tbody>
-    ${data.map(s=>`<tr>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue)">${s.folio}</td>
-      <td style="font-size:11px;white-space:nowrap">${new Date(s.fecha).toLocaleDateString('es-MX')}</td>
-      <td>${s.depto}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.desc}</td>
-      <td style="text-align:right;font-weight:600;white-space:nowrap">${s.total>0?'$'+Math.round(s.total).toLocaleString('es-MX'):'Por cotizar'}</td>
-      <td><span style="font-size:11px;color:${s.urgencia==='Crítico'?'var(--red)':s.urgencia==='Urgente'?'var(--amber)':'var(--green)'}">${s.urgencia}</span></td>
-      <td>${estatusBadge(s.estatus)}</td>
-    </tr>`).join('')}
-    </tbody></table></div>`;
-}
-
-// ── ADMINISTRACIÓN ──────────────────────────
-function renderAdmin(){
-  const deptos=[...new Set(solicitudes.map(s=>s.depto))].sort();
-  const fD=document.getElementById('filtroDepto');
-  const existingOpts=new Set([...fD.options].map(o=>o.value));
-  deptos.forEach(d=>{if(!existingOpts.has(d)){const o=document.createElement('option');o.value=d;o.textContent=d;fD.appendChild(o);}});
-
-  const fd=fD.value, fe=document.getElementById('filtroAdminEst').value;
-  let data=solicitudes;
-  if(fd) data=data.filter(s=>s.depto===fd);
-  if(fe) data=data.filter(s=>s.estatus===fe);
-
-  const total=solicitudes.length, pend=solicitudes.filter(s=>s.estatus==='Pendiente').length;
-  const monto=solicitudes.reduce((a,s)=>a+(s.total||0),0);
-  const criticos=solicitudes.filter(s=>s.urgencia==='Crítico').length;
-  document.getElementById('adminStats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total solicitudes</div><div class="stat-val">${total}</div><div class="stat-sub" style="color:var(--blue)">Todas las áreas</div></div>
-    <div class="stat-card"><div class="stat-label">Pendientes de revisión</div><div class="stat-val" style="color:var(--amber)">${pend}</div><div class="stat-sub" style="color:var(--amber)">Requieren acción</div></div>
-    <div class="stat-card"><div class="stat-label">Solicitudes críticas</div><div class="stat-val" style="color:var(--red)">${criticos}</div><div class="stat-sub" style="color:var(--red)">Hoy o mañana</div></div>
-    <div class="stat-card"><div class="stat-label">Monto total</div><div class="stat-val" style="font-size:16px">${monto>0?'$'+Math.round(monto).toLocaleString('es-MX'):'$0'}</div><div class="stat-sub" style="color:var(--green)">Gasto estimado</div></div>`;
-
-  if(!data.length){
-    document.getElementById('adminContainer').innerHTML=
-      `<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin solicitudes</div><div class="empty-sub">No hay registros con estos filtros</div></div>`;
-    return;
-  }
-  document.getElementById('adminContainer').innerHTML=`
-    <div style="overflow-x:auto">
-    <table class="tbl"><thead><tr><th>Folio</th><th>Fecha</th><th>Solicitante</th><th>Departamento</th><th>Descripción</th><th>Monto</th><th>Urgencia</th><th>Estatus</th><th>Acción</th></tr></thead><tbody>
-    ${data.map(s=>`<tr>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue)">${s.folio}</td>
-      <td style="font-size:11px;white-space:nowrap">${new Date(s.fecha).toLocaleDateString('es-MX')}</td>
-      <td style="font-size:12px">${s.nombre}</td>
-      <td>${s.depto}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${s.desc}</td>
-      <td style="text-align:right;font-weight:600;font-size:12px;white-space:nowrap">${s.total>0?'$'+Math.round(s.total).toLocaleString('es-MX'):'Por cotizar'}</td>
-      <td><span style="font-size:11px;color:${s.urgencia==='Crítico'?'var(--red)':s.urgencia==='Urgente'?'var(--amber)':'var(--green)'};font-weight:500">${s.urgencia}</span></td>
-      <td>${estatusBadge(s.estatus)}</td>
-      <td>
-        <select onchange="cambiarEstatus('${s.folio}',this.value)" style="font-size:11px;padding:3px 6px;border-radius:6px;border:0.5px solid var(--gray200);background:white;cursor:pointer;font-family:'DM Sans',sans-serif">
-          <option value="">Cambiar...</option>
-          <option value="Pendiente">Pendiente</option>
-          <option value="En proceso">En proceso</option>
-          <option value="Completada">Completada</option>
-          <option value="Rechazada">Rechazada</option>
-        </select>
-      </td>
-    </tr>`).join('')}
-    </tbody></table></div>`;
-}
-
-function cambiarEstatus(folio, nuevo){
-  if(!nuevo) return;
-  const idx=solicitudes.findIndex(s=>s.folio===folio);
-  if(idx>=0){ solicitudes[idx].estatus=nuevo; save(); renderAdmin(); updateBadges(); }
-}
-
-function updateBadges(){
-  const pend=solicitudes.filter(s=>s.estatus==='Pendiente').length;
-  document.getElementById('countBadge').textContent=solicitudes.length;
-  document.getElementById('pendBadge').textContent=pend;
-  document.getElementById('countBadge').style.display=solicitudes.length>0?'inline':'none';
-  document.getElementById('pendBadge').style.display=pend>0?'inline':'none';
-}
-
-function exportCSV(){
-  if(!solicitudes.length){alert('No hay solicitudes para exportar.');return;}
-  const hdrs=['Folio','Fecha','Mes','Nombre','Departamento','Aprobador','Tipo','Descripcion','Cantidad','Costo Unitario','Total','Proveedor','Fecha Ideal','Urgencia','Pago','Estatus'];
-  const csv=[hdrs.join(','),...solicitudes.map(s=>[
-    s.folio, new Date(s.fecha).toLocaleDateString('es-MX'), s.mes,
-    s.nombre, s.depto, s.aprobador, s.tipo,
-    '"'+(s.desc||'').replace(/"/g,"'")+'"',
-    s.cantidad, s.costo, Math.round(s.total||0),
-    s.prov, s.fechaIdeal, s.urgencia, s.pago, s.estatus
-  ].join(','))].join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='solicitudes_aromatex_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-// ── INIT ─────────────────────────────────────
-updateBadges();
-</script>
-</body>
-</html>
