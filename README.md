@@ -1,2 +1,93 @@
 # solicitudes-aromatex
 Portal de solicitudes de compra — Aromatex
+// ═══════════════════════════════════════════════════════════
+// SCRIPT: Recibir solicitudes del Portal ERP — Aromatex
+// Pega este código en: Extensiones → Apps Script
+// Luego: Implementar → Nueva implementación → Web app
+// Ejecutar como: Yo (daliacornejo@grupoavantex.com)
+// Acceso: Cualquier usuario, incluso anónimo
+// ═══════════════════════════════════════════════════════════
+
+function doPost(e) {
+  try {
+    // Parsear datos recibidos del portal
+    var datos = JSON.parse(e.postData.contents);
+    
+    // Abrir la hoja
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var hoja = ss.getSheetByName('SOLICITUDES') || ss.getActiveSheet();
+    
+    // Si es la primera fila, agregar encabezados
+    if (hoja.getLastRow() === 0) {
+      hoja.appendRow([
+        'FOLIO', 'FECHA', 'MES DE COMPRA', 'NOMBRE SOLICITANTE',
+        'DEPARTAMENTO', 'QUIEN AUTORIZA', 'TIPO DE SOLICITUD',
+        'DESCRIPCION', 'CANTIDAD', 'COSTO UNITARIO', 'GRAN TOTAL',
+        'PROVEEDOR SUGERIDO', 'FECHA IDEAL', 'URGENCIA',
+        'METODO DE PAGO', 'NOTAS', 'ESTATUS'
+      ]);
+      // Formato encabezados
+      hoja.getRange(1, 1, 1, 17)
+        .setBackground('#1B3A6B')
+        .setFontColor('#FFFFFF')
+        .setFontWeight('bold');
+    }
+    
+    // Agregar la nueva solicitud
+    var ahora = new Date();
+    var mes = ahora.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
+    
+    hoja.appendRow([
+      datos.folio || '',
+      ahora.toLocaleString('es-MX'),
+      mes,
+      datos.nombre || '',
+      datos.depto || '',
+      datos.aprobador || '',
+      datos.tipo || '',
+      datos.desc || '',
+      datos.cantidad || 0,
+      datos.costo || 0,
+      datos.total || 0,
+      datos.prov || '',
+      datos.fechaIdeal || '',
+      datos.urgencia || 'Normal',
+      datos.pago || '',
+      datos.notas || '',
+      'Pendiente'
+    ]);
+    
+    // Formato monetario en columnas de costo
+    var ultimaFila = hoja.getLastRow();
+    hoja.getRange(ultimaFila, 10, 1, 3).setNumberFormat('"$"#,##0.00');
+    
+    // Enviar email de notificación a Dalia
+    try {
+      MailApp.sendEmail({
+        to: 'daliacornejo@grupoavantex.com',
+        subject: '🛒 Nueva solicitud: ' + datos.folio + ' | ' + datos.depto,
+        body: 'Nueva solicitud recibida en el Portal de Compras Aromatex.\n\n' +
+              'FOLIO: ' + datos.folio + '\n' +
+              'Solicitante: ' + datos.nombre + '\n' +
+              'Departamento: ' + datos.depto + '\n' +
+              'Artículo: ' + datos.desc + '\n' +
+              'Total estimado: $' + (datos.total || 0).toLocaleString('es-MX') + '\n' +
+              'Urgencia: ' + datos.urgencia + '\n' +
+              'Fecha ideal: ' + datos.fechaIdeal + '\n\n' +
+              'Revisa el detalle en tu Google Sheet.'
+      });
+    } catch(emailErr) {
+      // Si falla el email, continúa igual
+    }
+    
+    // Respuesta exitosa
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok', folio: datos.folio }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
