@@ -429,7 +429,7 @@ function switchView(name, btn){
   btn.classList.add('active');
   document.getElementById('view-'+name).classList.add('active');
   if(name==='mis')   renderMisSolicitudes();
-  if(name==='admin') renderAdmin();
+  if(name==='admin') cargarAdminDesdeSheet();
 }
 
 function syncNav(){
@@ -634,43 +634,108 @@ function renderMisSolicitudes(){
 }
 
 // ── ADMINISTRACIÓN ──────────────────────────
+let sheetSolicitudes = [];
+
+function cargarAdminDesdeSheet(){
+  const container = document.getElementById('adminContainer');
+  container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Cargando solicitudes desde Google Sheet...</div></div>';
+
+  const sheetId = '1VKcJ4gjyzXFkIJMC94CEt2rnpFGan8SkI27XJrdHntc';
+  const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+'/gviz/tq?tqx=out:json&sheet=SOLICITUDES';
+
+  const cbName = 'gsAdminCb_' + Date.now();
+  const script = document.createElement('script');
+  let done = false;
+
+  window[cbName] = function(data){
+    done = true;
+    delete window[cbName];
+    document.body.removeChild(script);
+    try {
+      const rows = data.table.rows || [];
+      const cols = (data.table.cols || []).map(c => (c.label||'').toLowerCase());
+      const idx = n => cols.findIndex(c => c.includes(n));
+      const iF=idx('folio'), iFe=idx('fecha'), iM=idx('mes'), iN=idx('nombre'),
+            iD=idx('departamento'), iA=idx('autoriza'), iT=idx('tipo'),
+            iDe=idx('descripcion'), iC=idx('cantidad'), iCu=idx('costo'),
+            iG=idx('gran total'), iP=idx('proveedor'), iFi=idx('fecha ideal'),
+            iU=idx('urgencia'), iPa=idx('pago'), iNo=idx('notas'), iE=idx('estatus');
+
+      sheetSolicitudes = rows.map(function(r){
+        function v(i){ return i>=0&&r.c&&r.c[i]&&r.c[i].v!=null ? String(r.c[i].v) : ''; }
+        return {
+          folio: v(iF), fecha: v(iFe), mes: v(iM), nombre: v(iN),
+          depto: v(iD), aprobador: v(iA), tipo: v(iT), desc: v(iDe),
+          cantidad: parseFloat(v(iC))||0, costo: parseFloat(v(iCu))||0,
+          total: parseFloat(v(iG))||0, prov: v(iP), fechaIdeal: v(iFi),
+          urgencia: v(iU)||'Normal', pago: v(iPa), notas: v(iNo),
+          estatus: v(iE)||'Pendiente'
+        };
+      }).filter(r => r.folio && r.folio !== 'FOLIO');
+
+      renderAdmin();
+      updateBadges();
+    } catch(e){
+      container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Error al leer datos</div><div class="empty-sub">'+e.message+'</div></div>';
+    }
+  };
+
+  script.src = url + '&responseHandler=' + cbName;
+  script.onerror = function(){
+    if(!done){
+      done=true; delete window[cbName];
+      try{document.body.removeChild(script);}catch(e){}
+      container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">No se pudo conectar</div><div class="empty-sub">Verifica que el Sheet sea público</div></div>';
+    }
+  };
+  setTimeout(function(){
+    if(!done){
+      done=true; delete window[cbName];
+      try{document.body.removeChild(script);}catch(e){}
+      container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Tiempo de espera agotado</div><div class="empty-sub">Verifica tu conexión</div></div>';
+    }
+  }, 10000);
+  document.body.appendChild(script);
+}
+
 function renderAdmin(){
-  const deptos=[...new Set(solicitudes.map(s=>s.depto))].sort();
+  const data = sheetSolicitudes.length > 0 ? sheetSolicitudes : solicitudes;
+  const deptos=[...new Set(data.map(s=>s.depto))].sort();
   const fD=document.getElementById('filtroDepto');
   const existingOpts=new Set([...fD.options].map(o=>o.value));
   deptos.forEach(d=>{if(!existingOpts.has(d)){const o=document.createElement('option');o.value=d;o.textContent=d;fD.appendChild(o);}});
 
   const fd=fD.value, fe=document.getElementById('filtroAdminEst').value;
-  let data=solicitudes;
-  if(fd) data=data.filter(s=>s.depto===fd);
-  if(fe) data=data.filter(s=>s.estatus===fe);
+  let filtered=data;
+  if(fd) filtered=filtered.filter(s=>s.depto===fd);
+  if(fe) filtered=filtered.filter(s=>s.estatus===fe);
 
-  const total=solicitudes.length, pend=solicitudes.filter(s=>s.estatus==='Pendiente').length;
-  const monto=solicitudes.reduce((a,s)=>a+(s.total||0),0);
-  const criticos=solicitudes.filter(s=>s.urgencia==='Crítico').length;
+  const total=data.length, pend=data.filter(s=>s.estatus==='Pendiente').length;
+  const monto=data.reduce((a,s)=>a+(parseFloat(s.total)||0),0);
+  const criticos=data.filter(s=>s.urgencia==='Crítico'||s.urgencia==='Critico').length;
   document.getElementById('adminStats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Total solicitudes</div><div class="stat-val">${total}</div><div class="stat-sub" style="color:var(--blue)">Todas las áreas</div></div>
-    <div class="stat-card"><div class="stat-label">Pendientes de revisión</div><div class="stat-val" style="color:var(--amber)">${pend}</div><div class="stat-sub" style="color:var(--amber)">Requieren acción</div></div>
-    <div class="stat-card"><div class="stat-label">Solicitudes críticas</div><div class="stat-val" style="color:var(--red)">${criticos}</div><div class="stat-sub" style="color:var(--red)">Hoy o mañana</div></div>
+    <div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-val" style="color:var(--amber)">${pend}</div><div class="stat-sub" style="color:var(--amber)">Requieren acción</div></div>
+    <div class="stat-card"><div class="stat-label">Críticas</div><div class="stat-val" style="color:var(--red)">${criticos}</div><div class="stat-sub" style="color:var(--red)">Hoy o mañana</div></div>
     <div class="stat-card"><div class="stat-label">Monto total</div><div class="stat-val" style="font-size:16px">${monto>0?'$'+Math.round(monto).toLocaleString('es-MX'):'$0'}</div><div class="stat-sub" style="color:var(--green)">Gasto estimado</div></div>`;
 
-  if(!data.length){
+  if(!filtered.length){
     document.getElementById('adminContainer').innerHTML=
-      `<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin solicitudes</div><div class="empty-sub">No hay registros con estos filtros</div></div>`;
+      '<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin solicitudes</div><div class="empty-sub">No hay registros con estos filtros</div></div>';
     return;
   }
   document.getElementById('adminContainer').innerHTML=`
     <div style="overflow-x:auto">
     <table class="tbl"><thead><tr><th>Folio</th><th>Fecha</th><th>Solicitante</th><th>Departamento</th><th>Descripción</th><th>Monto</th><th>Urgencia</th><th>Estatus</th><th>Acción</th></tr></thead><tbody>
-    ${data.map(s=>`<tr>
+    ${filtered.map(s=>`<tr>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue)">${s.folio}</td>
-      <td style="font-size:11px;white-space:nowrap">${new Date(s.fecha).toLocaleDateString('es-MX')}</td>
-      <td style="font-size:12px">${s.nombre}</td>
+      <td style="font-size:11px;white-space:nowrap">${s.fecha?s.fecha.toString().slice(0,10):''}</td>
+      <td style="font-size:12px">${s.nombre||s.nombre}</td>
       <td>${s.depto}</td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${s.desc}</td>
       <td style="text-align:right;font-weight:600;font-size:12px;white-space:nowrap">${s.total>0?'$'+Math.round(s.total).toLocaleString('es-MX'):'Por cotizar'}</td>
-      <td><span style="font-size:11px;color:${s.urgencia==='Crítico'?'var(--red)':s.urgencia==='Urgente'?'var(--amber)':'var(--green)'};font-weight:500">${s.urgencia}</span></td>
-      <td>${estatusBadge(s.estatus)}</td>
+      <td><span style="font-size:11px;color:${(s.urgencia==='Crítico'||s.urgencia==='Critico')?'var(--red)':s.urgencia==='Urgente'?'var(--amber)':'var(--green)'};font-weight:500">${s.urgencia}</span></td>
+      <td>${estatusBadge(s.estatus||'Pendiente')}</td>
       <td>
         <select onchange="cambiarEstatus('${s.folio}',this.value)" style="font-size:11px;padding:3px 6px;border-radius:6px;border:0.5px solid var(--gray200);background:white;cursor:pointer;font-family:'DM Sans',sans-serif">
           <option value="">Cambiar...</option>
@@ -684,10 +749,22 @@ function renderAdmin(){
     </tbody></table></div>`;
 }
 
-function cambiarEstatus(folio, nuevo){
+async function cambiarEstatus(folio, nuevo){
   if(!nuevo) return;
-  const idx=solicitudes.findIndex(s=>s.folio===folio);
-  if(idx>=0){ solicitudes[idx].estatus=nuevo; save(); renderAdmin(); updateBadges(); }
+  // Update local
+  const idx = sheetSolicitudes.findIndex(s=>s.folio===folio);
+  if(idx>=0) sheetSolicitudes[idx].estatus = nuevo;
+  const idxL = solicitudes.findIndex(s=>s.folio===folio);
+  if(idxL>=0){ solicitudes[idxL].estatus=nuevo; save(); }
+  renderAdmin(); updateBadges();
+  // Update Sheet
+  try {
+    await fetch(WEBHOOK_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ accion:'actualizar_estatus', folio, estatus:nuevo })
+    });
+  } catch(err){ console.warn('Error actualizando Sheet:', err); }
 }
 
 function updateBadges(){
