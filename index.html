@@ -641,7 +641,7 @@ function cargarAdminDesdeSheet(){
   container.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Cargando solicitudes desde Google Sheet...</div></div>';
 
   const sheetId = '1VKcJ4gjyzXFkIJMC94CEt2rnpFGan8SkI27XJrdHntc';
-  const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+'/gviz/tq?tqx=out:json&sheet=SOLICITUDES';
+  const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+'/gviz/tq?tqx=out:json&sheet='+encodeURIComponent('CONSOLIDADO SOLICITUDES AROMATEX 2026');
 
   const cbName = 'gsAdminCb_' + Date.now();
   const script = document.createElement('script');
