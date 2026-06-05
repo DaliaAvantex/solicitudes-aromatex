@@ -541,7 +541,7 @@ function enviar(){
   save();
 
   fetch(WEBHOOK_URL, {
-    method:'POST', mode:'no-cors',
+    method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(sol)
   }).catch(function(err){ console.warn('Sheet sync error:', err); });
