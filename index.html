@@ -540,24 +540,14 @@ function enviar(){
   solicitudes.unshift(sol);
   save();
 
-  // Enviar via form para evitar CORS
-  var form = document.createElement('form');
-  form.method = 'POST';
-  form.action = WEBHOOK_URL;
-  form.target = 'hidden_iframe';
-  var input = document.createElement('input');
-  input.type = 'hidden';
-  input.name = 'data';
-  input.value = JSON.stringify(sol);
-  form.appendChild(input);
-  var iframe = document.getElementById('hidden_iframe') || document.createElement('iframe');
-  iframe.name = 'hidden_iframe';
-  iframe.id = 'hidden_iframe';
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
+  // Enviar a Google Sheet
+  var cbName = 'cb_' + Date.now();
+  var script = document.createElement('script');
+  var encoded = encodeURIComponent(JSON.stringify(sol));
+  window[cbName] = function(r){ delete window[cbName]; try{ document.body.removeChild(script); }catch(e){} };
+  script.src = WEBHOOK_URL + '?callback=' + cbName + '&data=' + encoded;
+  script.onerror = function(){ delete window[cbName]; try{ document.body.removeChild(script); }catch(e){} };
+  document.body.appendChild(script);
 
   document.getElementById('folioDisplay').textContent=folio;
   const meta=[
